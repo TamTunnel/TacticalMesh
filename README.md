@@ -198,6 +198,41 @@ Apache TacticalMesh is designed as a **general-purpose, dual-use platform**:
 
 > **Important:** End-users are responsible for export control compliance. See `docs/compliance-and-export-notes.md` for details.
 
+### Accreditation & Certification Status
+
+> [!WARNING]
+> **No Government Accreditation.** Apache TacticalMesh has NOT received any government security accreditation, Authority to Operate (ATO), or certification from any government agency.
+
+**Current Status:**
+- ⚠️ No ATO, IL certification, or FedRAMP authorization
+- ⚠️ No FIPS-validated cryptography
+- ⚠️ No Common Criteria certification
+
+**Design Supports Future Accreditation:**
+- ✅ Role-based access control (RBAC) with Admin/Operator/Observer roles
+- ✅ Comprehensive audit logging of all operator actions
+- ✅ API-first design enabling external monitoring and SIEM integration
+- ✅ Clear authentication and authorization boundaries
+
+Organizations deploying in government environments are **solely responsible** for obtaining necessary authorizations. See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
+
+---
+
+## Versioning and Releases
+
+Apache TacticalMesh follows [Semantic Versioning](https://semver.org/):
+
+- **Current Version:** v0.1.0 (Initial public release)
+- **Release Tags:** Published on GitHub as `v{major}.{minor}.{patch}`
+- **Changelog:** See [CHANGELOG.md](CHANGELOG.md) for detailed release notes
+
+### Version Policy
+
+| Version Range | Stability | Notes |
+|--------------|-----------|-------|
+| 0.x.x | Development | API may change between minor versions |
+| 1.x.x | Stable (future) | Backward-compatible within major version |
+
 ---
 
 ## Deployment Quick Start

@@ -112,6 +112,20 @@ When modifying or integrating Apache TacticalMesh:
 
 4. **License Compliance:** Modifications must comply with the Apache License 2.0 terms.
 
+> [!CAUTION]
+> **Radio and Cryptographic Integration Warning**
+> 
+> Integration of Apache TacticalMesh with specific radio systems, waveforms, or cryptographic modules (beyond standard TLS) may **change the export control classification** of the resulting integrated system and is **explicitly out of scope** for the core Apache TacticalMesh project.
+> 
+> Examples that may trigger export control review:
+> - Integration with military radios (e.g., SINCGARS, MUOS, Link 16)
+> - Custom cryptographic implementations or algorithms
+> - Hardware security module (HSM) integration
+> - FIPS-validated cryptography implementations
+> - Classified or proprietary waveform implementations
+> 
+> Users integrating such systems should consult export control counsel **before** development.
+
 ---
 
 ## Contact and Further Information
