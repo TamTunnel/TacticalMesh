@@ -556,7 +556,7 @@ components:
           type: string
         mac_address:
           type: string
-        metadata:
+        node_metadata:
           type: object
 
     NodeRegisterResponse:
@@ -646,7 +646,7 @@ components:
           type: number
         ip_address:
           type: string
-        metadata:
+        node_metadata:
           type: object
         registered_at:
           type: string
