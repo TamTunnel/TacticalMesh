@@ -2,6 +2,7 @@
 
 **Open-Source Tactical Edge Networking Platform**
 
+[![CI](https://github.com/TamTunnel/Apache-TacticalMesh/actions/workflows/ci.yml/badge.svg)](https://github.com/TamTunnel/Apache-TacticalMesh/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green.svg)](https://swagger.io/specification/)
 

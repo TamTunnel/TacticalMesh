@@ -3,7 +3,7 @@
 ## Apache TacticalMesh — Dual-Use Networking Platform
 
 **Document Version:** 1.0  
-**Last Updated:** December 2024  
+**Last Updated:** December 2025  
 **Classification:** UNCLASSIFIED / OPEN SOURCE
 
 ---
@@ -147,7 +147,7 @@ For export control questions, consult with:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | December 2024 | Initial release |
+| 1.0 | December 2025 | Initial release |
 
 ---
 

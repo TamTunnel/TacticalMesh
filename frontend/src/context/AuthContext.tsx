@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiClient, User, Token } from '../api/client';
+import { apiClient, User } from '../api/client';
 
 interface AuthContextType {
     user: User | null;
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const login = async (username: string, password: string) => {
         setError(null);
         try {
-            const token = await apiClient.login(username, password);
+            await apiClient.login(username, password);
             const currentUser = await apiClient.getCurrentUser();
             setUser(currentUser);
         } catch (err: unknown) {

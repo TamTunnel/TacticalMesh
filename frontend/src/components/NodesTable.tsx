@@ -28,14 +28,12 @@ import {
     TableHead,
     TableRow,
     TablePagination,
-    Button,
 } from '@mui/material';
 import {
     Search,
     Refresh,
     Circle,
     Send,
-    Delete,
     Visibility,
 } from '@mui/icons-material';
 import { apiClient, Node, NodeListResponse } from '../api/client';
