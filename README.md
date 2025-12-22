@@ -141,9 +141,14 @@ A defense program office or integrator wants to test multiple radios, routers, a
   - **Admin:** Full system access including user management
   - **Operator:** Node and command management
   - **Observer:** Read-only access to status and history
+- **Rate Limiting:** 5 login attempts per minute, 10 registrations per minute
+- **Account Lockout:** 15-minute lockout after 5 failed login attempts
+- **Password Policy:** Requires uppercase, lowercase, digit, and special character
+- **Forced Password Change:** Default admin must change password on first login
 - **Audit Logging:** Timestamped log of all actions for compliance
 
 ### Integration
+
 
 - **OpenAPI 3.0:** Complete API specification for code generation
 - **REST/JSON:** Standard interfaces for easy integration
@@ -270,7 +275,7 @@ Access points:
 - **API Docs:** http://localhost:8000/docs
 - **Console:** http://localhost:3000
 
-Default credentials: `admin` / `admin123`
+Default credentials: `admin` / `admin123` (password change required on first login)
 
 ### Minimal Local Demo
 

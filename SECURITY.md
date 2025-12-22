@@ -50,6 +50,11 @@ Apache TacticalMesh is **open-source, unclassified software** designed as genera
 | Audit Logging | ✅ Timestamped logs of all significant actions |
 | Password Storage | ✅ bcrypt hashing |
 | Input Validation | ✅ Pydantic schema validation |
+| Rate Limiting | ✅ 5/min login, 10/min registration |
+| Account Lockout | ✅ 15-minute lockout after 5 failed attempts |
+| Password Complexity | ✅ Requires uppercase, lowercase, digit, special char |
+| Forced Password Change | ✅ Default admin must change password on first login |
+
 
 ### What This Project Does NOT Provide
 
