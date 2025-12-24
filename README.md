@@ -182,14 +182,20 @@ A defense program office or integrator wants to test multiple radios, routers, a
 │                         TACTICAL EDGE NETWORK                        │
 │                                                                      │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐       │
-│  │ Vehicle  │◄──►│Dismounted│◄──►│  Sensor  │◄──►│   UAS    │       │
+│  │ Vehicle  │◄══►│Dismounted│◄══►│  Sensor  │◄══►│   UAS    │       │
 │  │  Node    │    │   Node   │    │   Node   │    │   Node   │       │
 │  │ (Agent)  │    │ (Agent)  │    │ (Agent)  │    │ (Agent)  │       │
-│  └──────────┘    └──────────┘    └──────────┘    └──────────┘       │
+│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘       │
+│       │               │               │               │              │
+│       └───────────────┴───────────────┴───────────────┘              │
+│                      UDP Mesh Links                                  │
+│            (Route Discovery, Message Relay)                          │
 │                                                                      │
-│                    ◄──► Mesh Links (Future)                         │
+│  Multi-Hop Routing: Node A → Node B → Controller                    │
+│  When direct path fails, messages relay through peers               │
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
 
 ### Technology Stack
 
