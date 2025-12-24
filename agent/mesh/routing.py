@@ -467,12 +467,16 @@ class MeshRouter:
     # Message Relay
     # =========================================================================
     
-    def relay_message(self, message: RelayMessage) -> bool:
+    def relay_message(self, message: RelayMessage, max_retries: int = 2) -> bool:
         """
-        Send a message via mesh relay.
+        Send a message via mesh relay with automatic retry on failure.
+        
+        If the primary route fails, attempts alternate routes up to max_retries.
+        Implements circuit breaker pattern by tracking peer failures.
         
         Args:
             message: The relay message to send
+            max_retries: Maximum retry attempts with alternate routes (default 2)
             
         Returns:
             True if message was sent to next hop
@@ -483,14 +487,28 @@ class MeshRouter:
             self.metrics["failed_relays"] += 1
             return False
         
-        # Select best route
-        route = self.select_best_route(message.destination)
-        if not route:
+        # Get all valid routes, sorted by preference
+        all_routes = self.get_all_routes(message.destination)
+        if not all_routes:
             logger.warning(f"No route available to {message.destination}")
             self.metrics["failed_relays"] += 1
             return False
         
-        # Increment hop and add to path
+        # Sort routes: prefer fewer hops, lower RTT, higher reliability
+        all_routes.sort(key=lambda r: (r.total_hops, r.estimated_rtt_ms, -r.reliability))
+        
+        # Filter out circuit-broken peers (reliability < 0.2 and recent failures)
+        viable_routes = [
+            r for r in all_routes 
+            if r.reliability >= 0.2 or r.failure_count < 3
+        ]
+        
+        if not viable_routes:
+            # Fall back to all routes if all are circuit-broken
+            viable_routes = all_routes
+            logger.warning(f"All routes to {message.destination} are degraded, trying anyway")
+        
+        # Increment hop and add to path (do this once before trying)
         if not message.increment_hop(self.node_id):
             logger.warning(f"Message {message.message_id} TTL exceeded after increment")
             self.metrics["failed_relays"] += 1
@@ -500,27 +518,62 @@ class MeshRouter:
         with self._lock:
             self.relay_cache[message.message_id] = message
         
-        # Serialize and send
-        try:
-            data = MSG_RELAY_DATA + message.to_bytes()
-            self._send_to_peer(data, route.next_hop_addr[0], route.next_hop_addr[1])
+        # Try routes with retry logic
+        attempts = 0
+        tried_peers = set()
+        
+        for route in viable_routes:
+            if attempts >= max_retries + 1:
+                break
             
-            self.metrics["messages_relayed"] += 1
-            self._hop_counts.append(message.hop_count)
-            self._update_avg_hop_count()
+            if route.next_hop in tried_peers:
+                continue
             
-            logger.info(
-                f"Relaying message {message.message_id}: "
-                f"{message.origin_node_id} → {route.next_hop} → {message.destination} "
-                f"(hop {message.hop_count}/{message.max_hops})"
-            )
-            return True
+            tried_peers.add(route.next_hop)
+            attempts += 1
             
-        except Exception as e:
-            logger.error(f"Failed to relay message {message.message_id}: {e}")
-            route.record_failure()
-            self.metrics["failed_relays"] += 1
-            return False
+            try:
+                data = MSG_RELAY_DATA + message.to_bytes()
+                self._send_to_peer(data, route.next_hop_addr[0], route.next_hop_addr[1])
+                
+                # Success - update metrics and route reliability
+                route.record_success()
+                self.metrics["messages_relayed"] += 1
+                self._hop_counts.append(message.hop_count)
+                self._update_avg_hop_count()
+                
+                logger.info(
+                    f"Relaying message {message.message_id}: "
+                    f"{message.origin_node_id} → {route.next_hop} → {message.destination} "
+                    f"(hop {message.hop_count}/{message.max_hops})"
+                )
+                return True
+                
+            except Exception as e:
+                logger.warning(
+                    f"Relay attempt {attempts} via {route.next_hop} failed: {e}"
+                )
+                route.record_failure()
+                
+                # Apply exponential backoff penalty to reliability
+                if route.failure_count >= 3:
+                    logger.info(
+                        f"Circuit breaker: marking {route.next_hop} as degraded "
+                        f"(reliability={route.reliability:.2f})"
+                    )
+        
+        # All attempts failed
+        logger.error(
+            f"Failed to relay message {message.message_id} after {attempts} attempts"
+        )
+        self.metrics["failed_relays"] += 1
+        
+        # Remove from cache since delivery failed
+        with self._lock:
+            self.relay_cache.pop(message.message_id, None)
+        
+        return False
+
     
     def handle_incoming_relay(self, data: bytes, sender_addr: tuple) -> None:
         """

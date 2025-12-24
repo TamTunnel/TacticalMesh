@@ -267,7 +267,36 @@ Apache TacticalMesh follows [Semantic Versioning](https://semver.org/):
 
 ---
 
+## Running Tests
+
+### Backend Tests
+
+```bash
+cd backend
+pip install pytest pytest-asyncio httpx aiosqlite
+python -m pytest tests/ -v
+```
+
+### Agent Tests
+
+```bash
+cd agent
+pip install pytest
+python -m pytest tests/ -v
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+npm install
+npm run test
+```
+
+---
+
 ## Deployment Quick Start
+
 
 ### Docker Compose (Recommended)
 
