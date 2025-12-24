@@ -93,6 +93,12 @@ class MeshPeering:
     MSG_PONG = b'\x02'
     MSG_ANNOUNCE = b'\x03'
     
+    # Routing protocol message types (handled externally)
+    MSG_ROUTE_REQUEST = b'\x04'
+    MSG_ROUTE_RESPONSE = b'\x05'
+    MSG_RELAY_DATA = b'\x06'
+    MSG_RELAY_ACK = b'\x07'
+    
     def __init__(
         self,
         node_id: str,
@@ -124,6 +130,7 @@ class MeshPeering:
         # Callbacks for integration
         self._on_peer_discovered: Optional[Callable[[PeerInfo], None]] = None
         self._on_peer_status_changed: Optional[Callable[[PeerInfo, PeerStatus], None]] = None
+        self._on_routing_message: Optional[Callable[[bytes, bytes, tuple], None]] = None
         
         logger.info(f"MeshPeering initialized: node_id={node_id}, port={listen_port}")
     
@@ -280,6 +287,14 @@ class MeshPeering:
                 del self._pending_pings[sender_id]
             
             self._update_peer_status(sender_id, addr, PeerStatus.REACHABLE, rtt_ms)
+        
+        elif msg_type in (self.MSG_ROUTE_REQUEST, self.MSG_ROUTE_RESPONSE, 
+                          self.MSG_RELAY_DATA, self.MSG_RELAY_ACK):
+            # Routing messages are handled by the MeshRouter
+            if self._on_routing_message:
+                self._on_routing_message(msg_type, data[1:], addr)
+            else:
+                logger.debug(f"Received routing message but no handler registered")
     
     def _update_peer_status(
         self, 
@@ -349,3 +364,38 @@ class MeshPeering:
     def on_peer_status_changed(self, callback: Callable[[PeerInfo, PeerStatus], None]) -> None:
         """Set callback for peer status changes."""
         self._on_peer_status_changed = callback
+    
+    def on_routing_message(self, callback: Callable[[bytes, bytes, tuple], None]) -> None:
+        """
+        Set callback for routing protocol messages.
+        
+        The callback receives (msg_type, payload, sender_addr) where:
+        - msg_type: One of MSG_ROUTE_REQUEST, MSG_ROUTE_RESPONSE, MSG_RELAY_DATA, MSG_RELAY_ACK
+        - payload: Message data after the type byte
+        - sender_addr: (address, port) tuple of the sender
+        """
+        self._on_routing_message = callback
+    
+    def send_raw(self, data: bytes, address: str, port: int) -> bool:
+        """
+        Send raw data to a specific address.
+        
+        Used by MeshRouter for sending routing protocol messages.
+        
+        Args:
+            data: Raw bytes to send
+            address: Destination IP address
+            port: Destination port
+            
+        Returns:
+            True if send was successful
+        """
+        if not self._socket:
+            return False
+        
+        try:
+            self._socket.sendto(data, (address, port))
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send raw data to {address}:{port}: {e}")
+            return False

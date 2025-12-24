@@ -149,10 +149,17 @@ A defense program office or integrator wants to test multiple radios, routers, a
 
 ### Integration
 
-
 - **OpenAPI 3.0:** Complete API specification for code generation
 - **REST/JSON:** Standard interfaces for easy integration
 - **Webhook Support:** (Roadmap) Event notifications to external systems
+
+### Mesh Networking (v0.1.0)
+
+- **Multi-Hop Routing:** Automatic failover through mesh peers when controller unreachable
+- **Route Discovery:** Dynamic path finding via neighbor broadcast
+- **Smart Path Selection:** Routes based on hop count, RTT, and reliability
+- **Loop Prevention:** TTL-based hop limits (configurable, default 5 hops)
+- **Relay Logging:** Full path tracing for debugging and audit
 
 ---
 

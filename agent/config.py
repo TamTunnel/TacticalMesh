@@ -22,6 +22,24 @@ class ControllerConfig(BaseModel):
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
 
+class MeshPeerConfig(BaseModel):
+    """Configuration for a static mesh peer."""
+    node_id: str = Field(..., description="Peer node identifier")
+    address: str = Field(..., description="Peer IP address or hostname")
+    port: int = Field(default=7777, description="Peer mesh port")
+
+
+class MeshConfig(BaseModel):
+    """Mesh networking configuration."""
+    enabled: bool = Field(default=False, description="Enable mesh networking")
+    listen_port: int = Field(default=7777, ge=1024, le=65535, description="UDP port for mesh")
+    heartbeat_interval_seconds: float = Field(default=10.0, ge=1.0, le=60.0)
+    peer_timeout_seconds: float = Field(default=30.0, ge=5.0, le=300.0)
+    route_cache_ttl_seconds: int = Field(default=60, ge=10, le=600)
+    max_hops: int = Field(default=5, ge=2, le=10, description="Maximum relay hops (TTL)")
+    peers: List[MeshPeerConfig] = Field(default=[], description="Static peer list")
+
+
 class AgentConfig(BaseModel):
     """Agent configuration model."""
     
@@ -65,12 +83,16 @@ class AgentConfig(BaseModel):
     data_dir: str = Field(default="./data", description="Local data directory")
     buffer_commands: bool = Field(default=True, description="Buffer unexecuted commands locally")
     
+    # Mesh networking
+    mesh: Optional[MeshConfig] = Field(default=None, description="Mesh networking configuration")
+    
     @validator('log_level')
     def validate_log_level(cls, v):
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         if v.upper() not in valid_levels:
             raise ValueError(f'log_level must be one of {valid_levels}')
         return v.upper()
+
 
 
 def load_config(config_path: str) -> AgentConfig:

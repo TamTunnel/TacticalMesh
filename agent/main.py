@@ -16,17 +16,21 @@ import argparse
 import logging
 import os
 import signal
+import struct
 import sys
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import psutil
 
 from .config import load_config, create_default_config, AgentConfig
 from .client import ControllerClient, CommandInfo
 from .actions import create_default_registry, ActionRegistry
+from .mesh.peering import MeshPeering, PeerStatus
+from .mesh.routing import MeshRouter, RelayMessage, MSG_ROUTE_REQUEST, MSG_ROUTE_RESPONSE, MSG_RELAY_DATA, MSG_RELAY_ACK
 
 # Global flag for graceful shutdown
 _shutdown_requested = False
@@ -97,7 +101,7 @@ class NodeAgent:
     Main Node Agent class.
     
     Handles the node lifecycle including registration, heartbeat,
-    and command execution.
+    command execution, and mesh networking.
     """
     
     def __init__(self, config: AgentConfig, logger: logging.Logger):
@@ -114,6 +118,11 @@ class NodeAgent:
         self.action_registry = create_default_registry(config.data_dir)
         self.registered = False
         self.last_heartbeat: Optional[datetime] = None
+        
+        # Mesh networking components
+        self.mesh_peering: Optional[MeshPeering] = None
+        self.mesh_router: Optional[MeshRouter] = None
+        self._init_mesh()
     
     def register(self) -> bool:
         """
@@ -151,6 +160,126 @@ class NodeAgent:
         """
         Send heartbeat with telemetry to the controller.
         
+        Tries direct connection first, falls back to mesh relay if enabled.
+        
+        Returns:
+            True if heartbeat was acknowledged (directly or via mesh)
+        """
+        # Try direct path first
+        if self._send_heartbeat_direct():
+            return True
+        
+        self.logger.warning("Direct heartbeat failed - controller unreachable")
+        
+        # If mesh enabled, try mesh relay
+        if self.mesh_router:
+            self.logger.info("Attempting mesh relay for heartbeat...")
+            return self._send_heartbeat_via_mesh()
+        
+        return False
+
+    
+    def _init_mesh(self) -> None:
+        """Initialize mesh networking if enabled."""
+        if not self.config.mesh or not self.config.mesh.enabled:
+            self.logger.info("Mesh networking disabled")
+            return
+        
+        mesh_config = self.config.mesh
+        
+        # Initialize mesh peering
+        self.mesh_peering = MeshPeering(
+            node_id=self.config.node_id,
+            listen_port=mesh_config.listen_port,
+            heartbeat_interval=mesh_config.heartbeat_interval_seconds,
+            peer_timeout=mesh_config.peer_timeout_seconds
+        )
+        
+        # Add static peers from config
+        for peer in mesh_config.peers:
+            self.mesh_peering.add_static_peer(
+                peer.node_id,
+                peer.address,
+                peer.port
+            )
+        
+        # Initialize mesh router
+        self.mesh_router = MeshRouter(
+            node_id=self.config.node_id,
+            peering=self.mesh_peering,
+            controller_client=self.client,
+            route_cache_ttl=mesh_config.route_cache_ttl_seconds,
+            max_hops=mesh_config.max_hops
+        )
+        
+        # Hook up message handlers
+        self.mesh_peering.on_routing_message(self._handle_mesh_message)
+        
+        # Start mesh peering
+        self.mesh_peering.start()
+        
+        self.logger.info(
+            f"Mesh networking enabled: port={mesh_config.listen_port}, "
+            f"peers={len(mesh_config.peers)}, max_hops={mesh_config.max_hops}"
+        )
+    
+    def _handle_mesh_message(self, msg_type: bytes, payload: bytes, sender_addr: tuple) -> None:
+        """
+        Handle incoming mesh routing messages.
+        
+        Dispatches to appropriate MeshRouter method based on message type.
+        
+        Args:
+            msg_type: Message type byte
+            payload: Message payload after type byte
+            sender_addr: (address, port) of sender
+        """
+        if not self.mesh_router:
+            return
+        
+        try:
+            if msg_type == MSG_ROUTE_REQUEST:
+                # Parse: node_id + \x00 + request_id + \x00 + destination
+                parts = payload.split(b'\x00', 2)
+                if len(parts) >= 3:
+                    sender_id = parts[0].decode('utf-8')
+                    request_id = parts[1].decode('utf-8')
+                    destination = parts[2].decode('utf-8')
+                    self.mesh_router.handle_route_request(
+                        sender_id, sender_addr, request_id, destination
+                    )
+            
+            elif msg_type == MSG_ROUTE_RESPONSE:
+                # Parse: node_id + \x00 + request_id + \x00 + destination + \x00 + hops(2B) + rtt(4B)
+                parts = payload.split(b'\x00', 3)
+                if len(parts) >= 4:
+                    sender_id = parts[0].decode('utf-8')
+                    request_id = parts[1].decode('utf-8')
+                    destination = parts[2].decode('utf-8')
+                    hops = struct.unpack('!H', parts[3][:2])[0]
+                    rtt_ms = struct.unpack('!f', parts[3][2:6])[0]
+                    self.mesh_router.handle_route_response(
+                        sender_id, sender_addr, request_id, destination, hops, rtt_ms
+                    )
+            
+            elif msg_type == MSG_RELAY_DATA:
+                self.mesh_router.handle_incoming_relay(payload, sender_addr)
+            
+            elif msg_type == MSG_RELAY_ACK:
+                # Parse: message_id + \x00 + success(1B)
+                parts = payload.split(b'\x00', 1)
+                if len(parts) >= 2:
+                    message_id = parts[0].decode('utf-8')
+                    success = parts[1][0] == 1 if parts[1] else False
+                    self.mesh_router.handle_relay_ack(message_id, success)
+                    
+        except Exception as e:
+            self.logger.error(f"Error handling mesh message: {e}")
+    
+    def _send_heartbeat_direct(self) -> bool:
+        """
+        Send heartbeat directly to controller.
+        
         Returns:
             True if heartbeat was acknowledged
         """
@@ -166,17 +295,70 @@ class NodeAgent:
         )
         
         if pending_commands is None:
-            self.logger.warning("Heartbeat failed - controller unreachable")
             return False
         
         self.last_heartbeat = datetime.utcnow()
-        self.logger.debug(f"Heartbeat acknowledged, {len(pending_commands)} pending commands")
+        self.logger.debug(f"Direct heartbeat acknowledged, {len(pending_commands)} pending commands")
         
         # Process any pending commands
         for cmd in pending_commands:
             self._execute_command(cmd)
         
         return True
+    
+    def _send_heartbeat_via_mesh(self) -> bool:
+        """
+        Send heartbeat via mesh routing when direct path fails.
+        
+        Returns:
+            True if heartbeat was relayed successfully
+        """
+        if not self.mesh_router:
+            return False
+        
+        # Discover routes if needed
+        if not self.mesh_router.has_route_to("controller"):
+            self.logger.info("Discovering mesh routes to controller...")
+            self.mesh_router.discover_routes("controller")
+            # Wait for responses
+            time.sleep(2.5)
+        
+        # Check if route exists now
+        route = self.mesh_router.select_best_route("controller")
+        if not route:
+            self.logger.warning("No mesh route to controller available")
+            return False
+        
+        # Wrap heartbeat data in relay message
+        metrics = get_system_metrics()
+        relay_msg = RelayMessage(
+            message_id=str(uuid.uuid4()),
+            msg_type="heartbeat",
+            origin_node_id=self.config.node_id,
+            destination="controller",
+            hop_count=0,
+            max_hops=self.config.mesh.max_hops if self.config.mesh else 5,
+            payload={
+                "node_id": self.config.node_id,
+                "cpu_usage": metrics.get("cpu_usage"),
+                "memory_usage": metrics.get("memory_usage"),
+                "disk_usage": metrics.get("disk_usage"),
+                "timestamp": datetime.utcnow().isoformat()
+            },
+            path_trace=[],
+            timestamp=datetime.utcnow().isoformat()
+        )
+        
+        # Send via mesh router
+        success = self.mesh_router.relay_message(relay_msg)
+        if success:
+            self.logger.info(
+                f"Heartbeat relayed via {route.next_hop} "
+                f"({route.total_hops} hops, {route.estimated_rtt_ms:.0f}ms RTT)"
+            )
+            self.last_heartbeat = datetime.utcnow()
+        
+        return success
     
     def _execute_command(self, command: CommandInfo):
         """
@@ -272,6 +454,8 @@ class NodeAgent:
     
     def cleanup(self):
         """Cleanup resources on shutdown."""
+        if self.mesh_peering:
+            self.mesh_peering.stop()
         self.client.close()
 
 

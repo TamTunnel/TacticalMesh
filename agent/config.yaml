@@ -38,3 +38,21 @@ log_file: null  # Set to path for file logging, e.g., "./logs/agent.log"
 # Local storage
 data_dir: "./data"
 buffer_commands: true  # Buffer unexecuted commands when offline
+
+# Mesh networking (experimental - for multi-hop routing)
+mesh:
+  enabled: false  # Set to true to enable mesh networking
+  listen_port: 7777
+  heartbeat_interval_seconds: 10
+  peer_timeout_seconds: 30
+  route_cache_ttl_seconds: 60
+  max_hops: 5
+  peers: []
+  # Example peer configuration:
+  # peers:
+  #   - node_id: tactical-node-002
+  #     address: 192.168.10.102
+  #     port: 7777
+  #   - node_id: tactical-node-003
+  #     address: 192.168.10.103
+  #     port: 7777
