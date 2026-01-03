@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/TamTunnel/TacticalMesh/actions/workflows/ci.yml/badge.svg)](https://github.com/TamTunnel/TacticalMesh/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Docker Publish](https://github.com/Start-Fell/Apache-TacticalMesh/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Start-Fell/Apache-TacticalMesh/actions/workflows/docker-publish.yml)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green.svg)](https://swagger.io/specification/)
 
 ---
@@ -41,13 +42,13 @@ Consider these operational realities:
 
 Existing tactical networking solutions suffer from critical limitations:
 
-| Challenge | Impact |
-|-----------|--------|
-| **Vendor Lock-in** | Proprietary systems create single-vendor dependencies with long procurement cycles and limited flexibility |
-| **Cost** | Military-grade mesh radios cost $10,000–$50,000+ per unit, limiting widespread deployment |
-| **Interoperability** | Different systems cannot communicate, hindering coalition operations |
-| **Adaptability** | Closed systems cannot be rapidly modified to address emerging threats |
-| **Supply Chain Risk** | Proprietary hardware creates supply chain vulnerabilities |
+| Challenge             | Impact                                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Vendor Lock-in**    | Proprietary systems create single-vendor dependencies with long procurement cycles and limited flexibility |
+| **Cost**              | Military-grade mesh radios cost $10,000–$50,000+ per unit, limiting widespread deployment                  |
+| **Interoperability**  | Different systems cannot communicate, hindering coalition operations                                       |
+| **Adaptability**      | Closed systems cannot be rapidly modified to address emerging threats                                      |
+| **Supply Chain Risk** | Proprietary hardware creates supply chain vulnerabilities                                                  |
 
 ---
 
@@ -78,13 +79,13 @@ Telecom-focused efforts to open radio access network interfaces:
 
 ### The Gaps TacticalMesh Addresses
 
-| Gap | TacticalMesh Approach |
-|-----|------------------------------|
-| Vendor Lock-in | Fully open-source with Apache 2.0 license |
-| High Cost | Runs on commodity hardware (Raspberry Pi, x86 boxes) |
-| Closed Code | Transparent, auditable source code |
-| Slow Innovation | Community-driven development with rapid iteration |
-| Interoperability | OpenAPI-first design for easy integration |
+| Gap                      | TacticalMesh Approach                                |
+| ------------------------ | ---------------------------------------------------- |
+| Vendor Lock-in           | Fully open-source with Apache 2.0 license            |
+| High Cost                | Runs on commodity hardware (Raspberry Pi, x86 boxes) |
+| Closed Code              | Transparent, auditable source code                   |
+| Slow Innovation          | Community-driven development with rapid iteration    |
+| Interoperability         | OpenAPI-first design for easy integration            |
 | Single Points of Failure | Decentralized architecture with graceful degradation |
 
 ---
@@ -113,19 +114,36 @@ Telecom-focused efforts to open radio access network interfaces:
 - **Coalition Operations:** Interoperable command and control for allied forces with different native systems
 
 ### Representative Use Cases
+
 **1. Platoon‑Level Edge Network in Contested Spectrum** -
 In a high‑threat environment, a platoon operating beyond the range of fixed infrastructure needs resilient local communications between vehicles, dismounted soldiers, and unattended sensors. TacticalMesh is deployed on small edge computers (e.g., ruggedized Raspberry Pi‑class devices) mounted in vehicles and carried in rucksacks. Each node runs the agent, registering with a nearby controller when available and continuing to exchange health and status information when disconnected. Operators use the web console to see which squads and sensors are online, issue simple commands (e.g., reconfigure reporting intervals, enable/disable a sensor), and review audit logs showing who changed what and when. This enables commanders to maintain situational awareness even when satellite and cellular links are degraded or denied.
 
 **2. Coalition / Joint Exercise Lab Environment** -
 During a joint or coalition training exercise, multiple nations want to experiment with different radio stacks, edge devices, and command‑and‑control systems without locking into a single vendor. TacticalMesh is deployed in a lab environment as the common “control‑plane” fabric: each participating nation connects its own radios and edge nodes via the TacticalMesh agent and integrates its national C2 prototypes via the OpenAPI interface. The open, Apache‑licensed controller provides shared visibility of node status and command delivery while allowing each partner to keep its own radio hardware and national applications. This supports experimentation with coalition interoperability while maintaining clean separation of sensitive national capabilities.
 
-**3. Rapid Response / Disaster Relief Network (Dual‑Use)** - 
+**3. Rapid Response / Disaster Relief Network (Dual‑Use)** -
 After a major natural disaster, civil authorities and military support units need to stand up a local communications fabric quickly in an area with damaged infrastructure. TacticalMesh is deployed on commercial off‑the‑shelf edge devices placed at command posts, field hospitals, and logistics hubs. The agent software forms a local control‑plane mesh, reporting basic health and location information back to a central controller when power and connectivity are available. The operations console gives incident commanders a single view of which sites are reachable, which edge nodes are overloaded, and where to direct scarce resources. This dual‑use scenario allows organizations to evaluate the platform in peacetime humanitarian missions while using the same codebase that can later be hardened for military operations.
 
-**4. Vendor‑Neutral Integration Testbed** - 
+**4. Vendor‑Neutral Integration Testbed** -
 A defense program office or integrator wants to test multiple radios, routers, and edge compute platforms from different vendors without relying on any one vendor’s proprietary management stack. TacticalMesh is used as a neutral integration layer: each device hosts a small agent that normalizes status and telemetry into a common schema. The program office connects their existing monitoring tools and prototypes to the controller’s OpenAPI endpoints to evaluate performance, resilience, and behavior under fault conditions. Because TacticalMesh is Apache‑licensed and open, the testbed can be shared with contractors, FFRDCs, and allied labs without complex licensing agreements, while still leaving final export‑control decisions to each organization.
 
 ---
+
+## 🚀 Live Demo
+
+**New!** You can now run the demo directly from the Web Console:
+
+1. Log in (`admin` / `admin123`).
+2. Go to **Settings**.
+3. Toggle **Demo Mode** to start the simulation.
+
+Alternatively, you can run the CLI simulation script:
+
+```bash
+./demo/start.sh
+```
+
+This spins up the full stack and simulates a tactical network with vehicles, drones, and soldiers moving in real-time. See the [Demo Guide](docs/DEMO.md) for more details.
 
 ## Key Features (v0.1)
 
@@ -147,9 +165,9 @@ A defense program office or integrator wants to test multiple radios, routers, a
 
 - **JWT Authentication:** Standard token-based authentication
 - **Role-Based Permissions:**
-  - **Admin:** Full system access including user management
-  - **Operator:** Node and command management
-  - **Observer:** Read-only access to status and history
+    - **Admin:** Full system access including user management
+    - **Operator:** Node and command management
+    - **Observer:** Read-only access to status and history
 - **Rate Limiting:** 5 login attempts per minute, 10 registrations per minute
 - **Account Lockout:** 15-minute lockout after 5 failed login attempts
 - **Password Policy:** Requires uppercase, lowercase, digit, and special character
@@ -205,17 +223,16 @@ A defense program office or integrator wants to test multiple radios, routers, a
 196: └──────────────────────────────────────────────────────────────────────┘
 ```
 
-
 ### Technology Stack
 
-| Component | Technology | Rationale |
-|-----------|------------|-----------|
-| Backend Controller | Python / FastAPI | Widely known, easy to audit, async-native |
-| Database | PostgreSQL | Enterprise-grade, strong government track record |
-| Web Console | React / TypeScript | Industry standard, large talent pool |
-| Node Agent | Python | Portable across ARM and x86, easy to modify |
-| Deployment | Docker / Kubernetes | Standard container orchestration |
-| API Specification | OpenAPI 3.0 | Enables code generation and tooling |
+| Component          | Technology          | Rationale                                        |
+| ------------------ | ------------------- | ------------------------------------------------ |
+| Backend Controller | Python / FastAPI    | Widely known, easy to audit, async-native        |
+| Database           | PostgreSQL          | Enterprise-grade, strong government track record |
+| Web Console        | React / TypeScript  | Industry standard, large talent pool             |
+| Node Agent         | Python              | Portable across ARM and x86, easy to modify      |
+| Deployment         | Docker / Kubernetes | Standard container orchestration                 |
+| API Specification  | OpenAPI 3.0         | Enables code generation and tooling              |
 
 ---
 
@@ -245,11 +262,13 @@ TacticalMesh is designed as a **general-purpose, dual-use platform**:
 > **No Government Accreditation.** TacticalMesh has NOT received any government security accreditation, Authority to Operate (ATO), or certification from any government agency.
 
 **Current Status:**
+
 - ⚠️ No ATO, IL certification, or FedRAMP authorization
 - ⚠️ No FIPS-validated cryptography
 - ⚠️ No Common Criteria certification
 
 **Design Supports Future Accreditation:**
+
 - ✅ Role-based access control (RBAC) with Admin/Operator/Observer roles
 - ✅ Comprehensive audit logging of all operator actions
 - ✅ API-first design enabling external monitoring and SIEM integration
@@ -269,10 +288,10 @@ TacticalMesh follows [Semantic Versioning](https://semver.org/):
 
 ### Version Policy
 
-| Version Range | Stability | Notes |
-|--------------|-----------|-------|
-| 0.x.x | Development | API may change between minor versions |
-| 1.x.x | Stable (future) | Backward-compatible within major version |
+| Version Range | Stability       | Notes                                    |
+| ------------- | --------------- | ---------------------------------------- |
+| 0.x.x         | Development     | API may change between minor versions    |
+| 1.x.x         | Stable (future) | Backward-compatible within major version |
 
 ---
 
@@ -306,7 +325,6 @@ npm run test
 
 ## Deployment Quick Start
 
-
 ### Docker Compose (Recommended)
 
 ```bash
@@ -322,6 +340,7 @@ docker-compose ps
 ```
 
 Access points:
+
 - **API:** http://localhost:8000
 - **API Docs:** http://localhost:8000/docs
 - **Console:** http://localhost:3000
@@ -331,26 +350,28 @@ Default credentials: `admin` / `admin123` (password change required on first log
 ### Minimal Local Demo
 
 1. **Start the Controller:**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn backend.main:app --reload
-   ```
+
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn backend.main:app --reload
+    ```
 
 2. **Start a Node Agent:**
-   ```bash
-   cd agent
-   pip install -r requirements.txt
-   python -m agent.main --init-config --node-id demo-node-001 --controller http://localhost:8000
-   python -m agent.main --config config.yaml
-   ```
+
+    ```bash
+    cd agent
+    pip install -r requirements.txt
+    python -m agent.main --init-config --node-id demo-node-001 --controller http://localhost:8000
+    python -m agent.main --config config.yaml
+    ```
 
 3. **Start the Console:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
 ---
 
@@ -443,4 +464,4 @@ See [LICENSE](LICENSE) for the complete license text.
 
 ---
 
-*TacticalMesh — Resilient networking for the tactical edge.*
+_TacticalMesh — Resilient networking for the tactical edge._

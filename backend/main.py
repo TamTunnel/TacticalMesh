@@ -22,8 +22,9 @@ from .database import init_db, close_db, async_session_maker
 from .models import User, UserRole
 from .auth import get_password_hash
 from .schemas import HealthResponse
-from .routers import auth, nodes, commands, config
+from .routers import auth, nodes, commands, config, simulation
 from .security import limiter
+from .simulation import simulation_manager
 
 # Configure logging
 settings = get_settings()
@@ -67,6 +68,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down TacticalMesh Controller...")
+    await simulation_manager.stop()  # Ensure simulation stops
     await close_db()
     logger.info("TacticalMesh Controller stopped")
 
@@ -156,6 +158,7 @@ app.include_router(auth.router)
 app.include_router(nodes.router)
 app.include_router(commands.router)
 app.include_router(config.router)
+app.include_router(simulation.router)
 
 
 # Root endpoint
