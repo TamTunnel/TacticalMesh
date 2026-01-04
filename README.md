@@ -4,7 +4,6 @@
 
 [![CI](https://github.com/TamTunnel/TacticalMesh/actions/workflows/ci.yml/badge.svg)](https://github.com/TamTunnel/TacticalMesh/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Docker Publish](https://github.com/Start-Fell/Apache-TacticalMesh/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Start-Fell/Apache-TacticalMesh/actions/workflows/docker-publish.yml)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green.svg)](https://swagger.io/specification/)
 
 ---
